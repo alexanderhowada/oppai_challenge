@@ -2,6 +2,20 @@
 
 # TODO
 
+## Analyst
+
+1. investigate columns
+2. 
+
+## Engineering
+
+1. Implement ETL in two steps:
+   - Append (bronze)
+   - last state (silver)
+   - merge
+2. Tests
+3. Schedule
+
 ## Science
 
 ### Users
