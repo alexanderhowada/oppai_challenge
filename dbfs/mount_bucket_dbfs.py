@@ -48,8 +48,4 @@ for config in TO_UNMOUNT:
 
 # COMMAND ----------
 
-
-
-# COMMAND ----------
-
 !ls /dbfs/mnt/oppai/anexos
