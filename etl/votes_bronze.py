@@ -67,11 +67,5 @@ df.persist()
 df = etl.transform(df)
 etl.assert_quality(df)
 
-etl.load(df, target_tb=TARGET_VOTES_BRONZE_TB)
+etl.load(df, target_tb=TARGET_VOTES_BRONZE_TB, drop=False)
 df.unpersist()
-
-# COMMAND ----------
-
-# 217598
-spark.sql(f"SELECT COUNT(1) FROM {TARGET_VOTES_BRONZE_TB}").display()
-spark.sql(f"SELECT * FROM {TARGET_VOTES_BRONZE_TB} LIMIT 100").display()

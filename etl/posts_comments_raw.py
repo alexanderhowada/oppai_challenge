@@ -63,9 +63,3 @@ etl.assert_quality(df)
 
 etl.load(df, target_tb=TARGET_POSTS_COMMENTS_RAW_TB, drop=False)
 df.unpersist()
-
-# COMMAND ----------
-
-# 
-spark.sql(f"SELECT COUNT(1) FROM {TARGET_POSTS_COMMENTS_RAW_TB}").display()
-spark.sql(f"SELECT * FROM {TARGET_POSTS_COMMENTS_RAW_TB} LIMIT 10").display()

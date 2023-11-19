@@ -62,17 +62,3 @@ etl.assert_quality(df)
 
 etl.load(df, target_tb=TARGET_VOTES_RAW_TB)
 df.unpersist()
-
-# COMMAND ----------
-
-df.display()
-
-# COMMAND ----------
-
-# 188336
-spark.sql(f"SELECT COUNT(1) FROM {TARGET_VOTES_RAW_TB}").display()
-spark.sql(f"SELECT * FROM {TARGET_VOTES_RAW_TB}").display()
-
-# COMMAND ----------
-
-
