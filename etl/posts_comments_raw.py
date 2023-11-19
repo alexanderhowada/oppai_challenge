@@ -56,11 +56,13 @@ class PostsCommentsRawETL:
 
 etl = PostsCommentsRawETL(spark, DT_START, DT_END)
 df = etl.extract(file_name=f"{BASE_PATH[5:]}/posts_comments.json")
+df.persist()
 
 df = etl.transform(df)
 etl.assert_quality(df)
 
 etl.load(df, target_tb=TARGET_POSTS_COMMENTS_RAW_TB, drop=False)
+df.unpersist()
 
 # COMMAND ----------
 

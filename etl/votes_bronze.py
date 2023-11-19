@@ -7,7 +7,7 @@ from utils.spark_delta_transform import unnest_struct, transform_column_names
 
 # COMMAND ----------
 
-class PostsCommentsBronzeETL:
+class VotesBronzeETL:
     def __init__(self, spark, dt_start, dt_end, pk=None):
         self.spark = spark
         self.dt_start = dt_start  # dummy varibles to be used later in real ETL
@@ -52,21 +52,17 @@ class PostsCommentsBronzeETL:
 
 # COMMAND ----------
 
-etl = PostsCommentsBronzeETL(spark, DT_START, DT_END)
-df = etl.extract(source_tb=TARGET_POSTS_COMMENTS_RAW_TB)
+etl = VotesBronzeETL(spark, DT_START, DT_END)
+df = etl.extract(source_tb=TARGET_VOTES_RAW_TB)
 df.persist()
 
 df = etl.transform(df)
 etl.assert_quality(df)
 
-etl.load(df, target_tb=TARGET_POSTS_COMMENTS_BRONZE_TB)
+etl.load(df, target_tb=TARGET_VOTES_BRONZE_TB)
 df.unpersist()
 
 # COMMAND ----------
 
-spark.sql(f"SELECT COUNT(1) FROM {TARGET_POSTS_COMMENTS_BRONZE_TB}").display()
-spark.sql(f"SELECT * FROM {TARGET_POSTS_COMMENTS_BRONZE_TB}").display()
-
-# COMMAND ----------
-
-
+spark.sql(f"SELECT COUNT(1) FROM {TARGET_VOTES_BRONZE_TB}").display()
+spark.sql(f"SELECT * FROM {TARGET_VOTES_BRONZE_TB}").display()

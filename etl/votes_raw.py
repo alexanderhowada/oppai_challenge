@@ -7,7 +7,7 @@ from utils.spark_delta_transform import unnest_struct, transform_column_names
 
 # COMMAND ----------
 
-class PostsCommentsBronzeETL:
+class VotesRawETL:
     def __init__(self, spark, dt_start, dt_end, pk=None):
         self.spark = spark
         self.dt_start = dt_start  # dummy varibles to be used later in real ETL
@@ -20,13 +20,14 @@ class PostsCommentsBronzeETL:
             pk = ["id_oid"]
         return pk
             
-    @print_args(print_kwargs=['source_tb'])
-    def extract(self, source_tb: str):
-        df = self.spark.read.format('delta').table(source_tb)
-        df = df.filter(f"updated_at_date BETWEEN '{self.dt_start}' AND '{self.dt_end}'").distinct()
+    @print_args(print_kwargs=['file_name'])
+    def extract(self, file_name: str):
+        df = self.spark.read.format('json').options(multiLine=True).load(file_name)
         return df
     
     def transform(self, df):
+        df = unnest_struct(df)
+        df = transform_column_names(df)
         df = self._transform_to_timestamp(df)        
         return df
     
@@ -52,20 +53,24 @@ class PostsCommentsBronzeETL:
 
 # COMMAND ----------
 
-etl = PostsCommentsBronzeETL(spark, DT_START, DT_END)
-df = etl.extract(source_tb=TARGET_POSTS_COMMENTS_RAW_TB)
+etl = VotesRawETL(spark, DT_START, DT_END)
+df = etl.extract(file_name=f"{BASE_PATH[5:]}/votes.json")
 df.persist()
 
 df = etl.transform(df)
 etl.assert_quality(df)
 
-etl.load(df, target_tb=TARGET_POSTS_COMMENTS_BRONZE_TB)
+etl.load(df, target_tb=TARGET_VOTES_RAW_TB)
 df.unpersist()
 
 # COMMAND ----------
 
-spark.sql(f"SELECT COUNT(1) FROM {TARGET_POSTS_COMMENTS_BRONZE_TB}").display()
-spark.sql(f"SELECT * FROM {TARGET_POSTS_COMMENTS_BRONZE_TB}").display()
+df.display()
+
+# COMMAND ----------
+
+spark.sql(f"SELECT COUNT(1) FROM {TARGET_VOTES_RAW_TB}").display()
+spark.sql(f"SELECT * FROM {TARGET_VOTES_RAW_TB}").display()
 
 # COMMAND ----------
 
