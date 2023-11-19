@@ -17,7 +17,7 @@ class VotesBronzeETL:
     @staticmethod
     def _set_pk(pk):
         if pk is None:
-            pk = ["id_oid"]
+            pk = ["id_oid", "vote_index"]
         return pk
             
     @print_args(print_kwargs=['source_tb'])
@@ -27,7 +27,11 @@ class VotesBronzeETL:
         return df
     
     def transform(self, df):
-        df = self._transform_to_timestamp(df)        
+        df = self._transform_to_timestamp(df)
+        df = df.withColumn('votes', F.explode('votes')) \
+            .withColumn('vote_index', F.col('votes.index')) \
+            .withColumn('vote_weight', F.col('votes.weight')) \
+            .drop('votes')
         return df
     
     @staticmethod
@@ -40,9 +44,13 @@ class VotesBronzeETL:
     def assert_quality(self, df):
         assert_no_null(df, self.pk+['updated_at_date'])
         assert_pk(df, self.pk)
-    
-    @print_args(print_kwargs=['target_tb'])
-    def load(self, df, target_tb):
+
+    @print_args(print_kwargs=['target_tb', 'drop'])
+    def load(self, df, target_tb, drop=False):
+        if drop and table_exists(target_tb, self.spark):
+            print(f"Dropping table {target_tb}")
+            self.spark.sql(f"DROP TABLE {target_tb}").display()
+
         print(f"{df.count()} rows.")
         merge(df, target_tb, self.pk, spark_session=self.spark)
 
@@ -59,10 +67,11 @@ df.persist()
 df = etl.transform(df)
 etl.assert_quality(df)
 
-etl.load(df, target_tb=TARGET_VOTES_BRONZE_TB)
+etl.load(df, target_tb=TARGET_VOTES_BRONZE_TB, drop=True)
 df.unpersist()
 
 # COMMAND ----------
 
+# 217598
 spark.sql(f"SELECT COUNT(1) FROM {TARGET_VOTES_BRONZE_TB}").display()
-spark.sql(f"SELECT * FROM {TARGET_VOTES_BRONZE_TB}").display()
+spark.sql(f"SELECT * FROM {TARGET_VOTES_BRONZE_TB} LIMIT 100").display()

@@ -28,7 +28,7 @@ class VotesRawETL:
     def transform(self, df):
         df = unnest_struct(df)
         df = transform_column_names(df)
-        df = self._transform_to_timestamp(df)        
+        df = self._transform_to_timestamp(df)   
         return df
     
     @staticmethod
@@ -69,6 +69,7 @@ df.display()
 
 # COMMAND ----------
 
+# 188336
 spark.sql(f"SELECT COUNT(1) FROM {TARGET_VOTES_RAW_TB}").display()
 spark.sql(f"SELECT * FROM {TARGET_VOTES_RAW_TB}").display()
 
