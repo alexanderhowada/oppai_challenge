@@ -1,7 +1,7 @@
 # Databricks notebook source
 from pyspark.sql import functions as F
 from utils.logs import print_args
-from utils.spark_delta import merge, table_exists
+from utils.spark_delta import merge, table_exists, optimize_tb
 from utils.data_quality import assert_no_null, assert_pk
 from utils.spark_delta_transform import unnest_struct, transform_column_names
 
@@ -62,3 +62,8 @@ etl.assert_quality(df)
 
 etl.load(df, target_tb=TARGET_VOTES_RAW_TB)
 df.unpersist()
+
+# COMMAND ----------
+
+# etl = VotesRawETL(spark, DT_START, DT_END)
+# optimize_tb(spark, TARGET_VOTES_RAW_TB, ['updated_at_date']+etl.pk, replace=True)

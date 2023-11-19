@@ -100,6 +100,19 @@ def merge(df, target_table, pk, spark_session=None, partition=[]):
             df.write.mode('overwrite').format('delta').saveAsTable(target_table)
 
 
+def optimize_tb(spark, target_tb, cluster, replace=False):
+    cluster = str(tuple(cluster))
+    cluster = cluster.replace(',)', ')').replace("'", "")
+
+    if replace:
+        spark.sql(f"""
+        CREATE OR REPLACE TABLE {target_tb} CLUSTER BY {cluster} AS
+        SELECT * FROM {target_tb}
+        """)
+    else:
+        display(spark.sql(f"ALTER TABLE {target_tb} CLUSTER BY {cluster}"))
+    display(spark.sql(f"OPTIMIZE {target_tb}"))
+
 if __name__ == '__main__':
     from pyspark.sql import SparkSession
 

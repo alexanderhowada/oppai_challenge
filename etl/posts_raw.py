@@ -3,7 +3,7 @@ from pyspark.sql import functions as F
 from utils.logs import print_args
 from utils.data_quality import assert_no_null, assert_pk
 from utils.spark_delta_transform import unnest_struct, transform_column_names
-from utils.spark_delta import merge, table_exists
+from utils.spark_delta import merge, table_exists, optimize_tb
 
 # COMMAND ----------
 
@@ -63,3 +63,12 @@ etl.assert_quality(df)
 
 etl.load(df, target_tb=TARGET_POSTS_RAW_TB, drop=DROP_POSTS_RAW)
 df.unpersist()
+
+# COMMAND ----------
+
+# etl = PostsRawETL(spark, DT_START, DT_END)
+# optimize_tb(spark, TARGET_POSTS_RAW_TB, ['updated_at_date']+etl.pk, replace=True)
+
+# COMMAND ----------
+
+
