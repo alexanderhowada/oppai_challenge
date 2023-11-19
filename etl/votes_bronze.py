@@ -67,7 +67,7 @@ df.persist()
 df = etl.transform(df)
 etl.assert_quality(df)
 
-etl.load(df, target_tb=TARGET_VOTES_BRONZE_TB, drop=True)
+etl.load(df, target_tb=TARGET_VOTES_BRONZE_TB)
 df.unpersist()
 
 # COMMAND ----------
