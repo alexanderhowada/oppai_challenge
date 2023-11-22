@@ -25,6 +25,7 @@ This is a <b>fully deployed and ready-to-go</b> solution.
     - Simple regression example (can be upgraded to a forecaster)
 - ACL
     - While I am not an expert in ACL, Databricks offfers its own ACL solution for its resources.
+    - Secrets (see <code>dbutils.secrets</code>)
 - Git Integration
     - Code is stored in GitHub.
 

@@ -6,9 +6,10 @@
 # COMMAND ----------
 
 from datetime import datetime, timedelta
+from pyspark.sql import functions as F
 from utils.databricks import Widgets
 from machine_learning.linear_trend import LinearTrend
-from pyspark.sql import functions as F
+from machine_learning.openai import OpenAIRequests
 
 # COMMAND ----------
 
@@ -40,6 +41,24 @@ ORDER BY created_at_date DESC
 
 post_ids = post_id_df.select('id_oid').toPandas()['id_oid'].tolist()
 w.create_text('post_id', post_ids[0])
+
+# COMMAND ----------
+
+def get_comments_from_post():
+    return spark.sql(f"""
+    SELECT DISTINCT
+        CASE WHEN translations_description IS NOT NULL AND translations_description != ''
+            THEN translations_description
+            ELSE translations_title
+        END body
+    FROM {TARGET_POSTS_ENGLISH_SILVER}
+    WHERE id_oid = '{w("post_id")}'
+
+    UNION ALL
+
+    SELECT DISTINCT body FROM {TARGET_POST_COMMENTS_JOIN_SILVER}
+    WHERE post_id_oid = '{w("post_id")}'
+    """).toPandas()['body'].tolist()
 
 # COMMAND ----------
 
@@ -132,66 +151,36 @@ df.display()
 
 # COMMAND ----------
 
-comments = spark.sql(f"""
-SELECT DISTINCT
-    CASE WHEN translations_description IS NOT NULL AND translations_description != ''
-        THEN translations_description
-        ELSE translations_title
-    END body
-FROM {TARGET_POSTS_ENGLISH_SILVER}
-WHERE id_oid = '{w("post_id")}'
+comments = get_comments_from_post()
 
-UNION ALL
+message = """Summarize these responses the message and write the main keywords.""" \
+    """For context, these messages were written in a Patreon for adult games\n""" \
+    """This is the message\n""" \
+    """------------------------------\n""" \
+    f"""{comments[0]}\n""" \
+    """------------------------------\n""" \
+    """And these are the responses\n""" \
+    """------------------------------\n""" \
+    f"""{str(comments[1:])}\n""" \
+    """------------------------------\n""" \
+    """Return a single JSON in the format: {"summary": "summary here", "keywords": ["keyword 1", "keyword 2", ...]}.""" \
+    """The JSON must contain only information regarding the responses."""
 
-SELECT DISTINCT body FROM {TARGET_POST_COMMENTS_JOIN_SILVER}
-WHERE post_id_oid = '{w("post_id")}'
-""").toPandas()['body'].tolist()
+if len(comments) >= 5:
+    api = OpenAIRequests(dbutils.secrets.get(scope='openai', key='openai_key'))
+    r = api.chat_completion(message)
+    j = r.json()
+    df = api.get_content_df()
+    print(f"Total cost (USD): {api.calculate_cost()}")
+    df.display()
+else:
+    print("Less than 5 comments. Printing them.")
+    for c in comments:
+        print('--------------------')
+        print(c)
+        print('--------------------')
+
 
 # COMMAND ----------
 
-import requests
-
-class OpenAIRequests:
-    """Make direct request to OpenAI without using the Python api (bugged in Databricks)."""
-
-    def __init__(self, openai_api_key):
-        self.api_key = openai_api_key
-
-    def get_headers(self):
-        return  {
-            "Content-Type": "application/json",
-            "Authorization": f"Bearer {self.api_key}"
-        }
-
-    def _build_context(self, message):
-        return [{"role": "user", "content": message}]
-
-    def chat_completion(self, message):
-        url = "https://api.openai.com/v1/chat/completions"
-        data = {
-            "model": "gpt-3.5-turbo-1106",
-            "response_format": {"type": "json_object"},
-            "messages": self._build_context(message),
-        }
-        headers = self.get_headers()
-
-        response = requests.post(url, headers=headers, json=data)
-
-        return response
-
-message = """Summarize these responses.""" \
-    """For context, these messages were written in a Patreon for adult games.""" \
-    """The first message is the initial post, and the remaining are the responses to the initial post.""" \
-    """Return a single JSON in the format: {"summary": ["response here"]}.""" \
-    f"""{str(comments)}"""
-    
-api = OpenAIRequests(dbutils.secrets.get(scope='openai', key='openai_key'))
-r = api.chat_completion(message)
-
-# COMMAND ----------
-
-print(r.text)
-
-# COMMAND ----------
-
-
+comments
