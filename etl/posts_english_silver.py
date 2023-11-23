@@ -12,12 +12,12 @@ SELECT
     , index
     , option
 FROM {TARGET_POSTS_BRONZE_TB} p
-JOIN {TARGET_POSTS_TRANSLATIONS_BRONZE_TB} t
+LEFT JOIN {TARGET_POSTS_TRANSLATIONS_BRONZE_TB} t
     ON t.id_oid = p.id_oid
-LATERAL VIEW POSEXPLODE(t.translations_options) options AS index, option
+LATERAL VIEW POSEXPLODE(
+    CASE WHEN SIZE(t.translations_options) = 0
+        THEN ARRAY("")
+        ELSE t.translations_options
+    END) options AS index, option
 WHERE t.translations_language = 'en'
 """).display()
-
-# COMMAND ----------
-
-spark.sql(f"SELECT * FROM {TARGET_POSTS_ENGLISH_SILVER} WHERE id_oid = '654ac3aac292fbc27462505b'").collect()

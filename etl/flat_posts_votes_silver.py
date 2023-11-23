@@ -12,9 +12,9 @@ SELECT
     , posts.* EXCEPT(id_oid, updated_at_date, created_at_date, index)
     , users.* EXCEPT(id_oid, updated_at_date, created_at_date)
 FROM {TARGET_VOTES_BRONZE_TB} votes
-JOIN {TARGET_POSTS_ENGLISH_SILVER} posts
+LEFT JOIN {TARGET_POSTS_ENGLISH_SILVER} posts
     ON votes.post_id_oid = posts.id_oid
     AND votes.vote_index = posts.index
-JOIN {TARGET_USERS_BRONZE_TB} users
+LEFT JOIN {TARGET_USERS_BRONZE_TB} users
     ON votes.user_id_oid = users.id_oid
 """)

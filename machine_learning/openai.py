@@ -55,7 +55,7 @@ class OpenAIRequests:
     def __init__(self, openai_api_key):
         self.api_key = openai_api_key
         self.cost_per_100k_token = {
-            'input': 0.0010, 'output': 0.002
+            'input': 0.001, 'output': 0.002
         }
 
     def get_headers(self):
@@ -89,7 +89,7 @@ class OpenAIRequests:
     
     def get_content_df(self, r=None):
         r = r or self.response
-        
+
         content = r.json()['choices']
         new_content = []
         for i, c in enumerate(content):
