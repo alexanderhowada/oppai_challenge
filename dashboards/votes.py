@@ -166,6 +166,10 @@ message = """Summarize these responses the message and write the main keywords."
     """Return a single JSON in the format: {"summary": "summary here", "keywords": ["keyword 1", "keyword 2", ...]}.""" \
     """The JSON must contain only information regarding the responses."""
 
+print("------------post------------")
+print(comments[0])
+print("----------------------------")
+
 if len(comments) >= 5:
     api = OpenAIRequests(dbutils.secrets.get(scope='openai', key='openai_key'))
     r = api.chat_completion(message)
@@ -183,4 +187,11 @@ else:
 
 # COMMAND ----------
 
-comments
+# print(comments)
+
+print("Comments with the most ammount of votes.")
+spark.sql(f"""
+SELECT post_id_oid, count(vote_id_oid) FROM {TARGET_POST_VOTES_JOIN_SILVER}
+GROUP BY 1
+ORDER BY 2 DESC
+""").display()
