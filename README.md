@@ -1,33 +1,33 @@
-# Oppai Challenge
-
-# Overview
+# Project Overview
 
 This repository implements the solution of the Oppai challenge.
-The infrastructure runs on Databricks AWS.
-Checkout [Alexander Wada's GitHub](https://github.com/alexanderhowada/oppai_challenge.git) for the source code.
+Answers to the questions of the Oppai Challenge pdf are at the end.
 
-This is a <b>fully deployed and ready-to-go</b> solution.
+The infrastructure runs on Databricks AWS and this is a <b>fully deployed and ready-to-go</b> solution.
+Many companies, including the company that I currently work at (WMcCann 5bi USD worth it agency),
+runs their data pipelines on Databricks deployments like this one.
+Checkout [Alexander Wada's GitHub](https://github.com/alexanderhowada/oppai_challenge.git) for the source code.
 
 # Features (data analyst/engineering/science):
 - Deploy on Databricks AWS
-    - Lakehouse (data lake + warehouse).
-    - Integration with AWS S3 storage.
+    - Lakehouse (data lake + warehouse). See https://www.databricks.com/blog/2020/01/30/what-is-a-data-lakehouse.html for details.
+    - Integration with AWS S3 storage and other services.
     - Fully scalable.
-- Full pipeline orchestration (see workflows)
-    - Table tiers (raw/bronze/silver/gold)
-    - CD (continuous deployment) with Git integration
-    - Spark!
-- Dashboards
-    - On notebooks for money saving (see dashboards folder)
-    - Can be deployed as custom dashboards (costs a mininum of 2USD per day!)
-- Machine learning (see machine_leaning folder)
-    - Integration with OpenAI
-    - Simple regression example (can be upgraded to a forecaster)
 - ACL
     - While I am not an expert in ACL, Databricks offfers its own ACL solution for its resources.
     - Secrets (see <code>dbutils.secrets</code>)
 - Git Integration
     - Code is stored in GitHub.
+- Full pipeline orchestration (see workflows)
+    - Table tiers (raw/bronze/silver/gold)
+    - CD (continuous deployment) with Git integration
+    - Spark (Big Data framwork)!
+- Dashboards
+    - On notebooks for money saving (see dashboards folder)
+    - Can be deployed as custom dashboards (costs a mininum of 1USD per hour!)
+- Machine learning (see machine_leaning folder)
+    - Integration with OpenAI
+    - Simple regression example (can be upgraded to a forecaster)
 
 # Infrastructure
 
@@ -39,10 +39,22 @@ it uses their infrastructure to run.
 Therefore, the data is stored withing the data provider and not on Databricks!
 
 For pricing, we have to pay for the cloud provider resources + Databricks.
-The total pricing for this deployement is:
+The total pricing for this deployement is approximatelly:
+2.5 USD per day (1.5 for AWS and 1.0 for Databricks)
+plus a few cents for the ChatGPT API.
+Here breaf pricing breakdown of this deployment:
+1. AWS (total approx 1.5 USD per day)
+    - 1.09 USD for nat gateway
+    - the remaining is on EC2
+2. Databricks (total approx 1 USD per day)
+    - 99% of costs due to interactive machines (notebooks as in Jupyter notebooks)
+    - 1% of costs due to pipeline runs.
+3. ChatGPT
+    - A few parts of cents per request.
+    - Total cost < 1 USD.
 
 Despite its high price, it is important to remember that Datbricks is a all-in-one solution.
-The same solution without Databricks and with the similar funcionalities should use:
+The same solution without Databricks and with the similar funcionalities should use/implement:
 1. Orchestrator (such as Airflow/Prefect)
     - Airflow must be deployed with Kubernetes
     - Prefect must be deployed with additional infrastructure for each job.
@@ -51,16 +63,30 @@ The same solution without Databricks and with the similar funcionalities should 
 3. SQL solution (Postgres/AWS Athena)
     - Postgres has daily costs for running it.
     - Athena can get very expensive for unoptimized datasets.
+4. CI/CD
+    - Databricks implements a simplified CD
+5. Workspace
+    - Fully colaborative workspace that avoid problems with local development
 
 Also, notice that Databricks is also capable of deploying Machine Learning solutions,
 and that companies such as <b>iFood</b> uses it.
 
-# S3 integration
+# S3 integration and lakehouse.
 
 Databricks allow mounting S3 in its file system.
 Here, the dbfs/mount_bucket_dbfs notebook shows how to mount.
 Notice, that it is also important to follow this instructions (https://docs.databricks.com/en/dbfs/mounts.html)
 in order to give the appropriated permission in AWS.
+Since S3 is directly accessed by Databricks, this means that we can have all
+structured and unstructed data at our disposal, therefore the lakehouse.
+
+For structured data, this deployment uses Delta tables as the format for tables.
+Delta tables is a open source format that uses the parquet as the base data format,
+but allows logs and ACID transactions.
+Furthermore, data storage and processing are separated, therefore we only pay
+for processing while active using the data.
+See [Databricks explanation](https://docs.databricks.com/en/delta/index.html)
+for more details.
 
 # Data Pipelines
 
@@ -69,7 +95,7 @@ in order to give the appropriated permission in AWS.
 The orchestrated data pipeline can be seen in the workflows tab (the cron is not configured, but it can run on a schedule).
 
 The data pipelines notebooks are stored in the folder etl.
-Here we follow Databricks Medallion guideline (https://www.databricks.com/glossary/medallion-architecture)
+Here we follow [Databricks Medallion guideline](https://www.databricks.com/glossary/medallion-architecture)
 with addition of the raw layer:
 
 1. raw: appended data (to keep history).
@@ -77,9 +103,14 @@ with addition of the raw layer:
 3. silver: transformed data for reports
 4. gold: (not featured) business-ready tables.
 
+Data pipelines greatly benefit from data quality and unittests.
+Therefore, we also implement very simplified versions of quality and unittests.
+See utils.data_quality and etl/tests for a very simplified view of the data quality and
+unittest implementations.
+
 ## Medalion implementation explanation
 
-The ideia of keeping an data history is to keep track of changes over the months.
+The ideia of keeping an data history (raw tables) is to keep track of changes over the months.
 The changes can include user constribution, number of patrons, etc.
 These are not implemented in the dashboards due to the absence of data.
 
@@ -99,7 +130,7 @@ Since they are views, we ensure that that latest data is always there.
 ## Overview
 
 While Databricks offers a SQL Warehouse with Dashboards,
-their "Serverless" solution always runs two EC2 VMs that costs about 1USD per hour,
+their "serverless" solution always runs two EC2 VMs that costs about 1USD per hour,
 which if very expensive for a single person to use.
 Hence the dashboards will be deployed in notebooks.
 
@@ -110,42 +141,156 @@ I suggest looking at the notebooks following the order:
 1. users
 2. posts
 3. votes
+4. top_countries
+5. post_comments_summary (<b>ChatGPT Integration!!</b>)
 
-These notebook contains afew annotations explaining a few of the results,
-and there are a few extra features like a linear regression (that can be upgraded to a forecaster),
+These notebook contains afew annotations explaining a few of the results.
+To observe the results it may be necessary to change the widgets values at the top and run the cells once again.
+The notebooks have a few extra features like a linear regression (that can be upgraded to a forecaster),
 and integration with ChatGPT (paid).
 
-# TODO
+Here I would like to highlight the integration with the ChatGPT
+for <b>summarizing thousands of post comments in a few seconds</b>.
+While it is interesting to implement my own solution,
+it is impossible to compete with the state-of-art developments of OpenAI.
+Therefore, it is imperative to make use of its (paid) API
+before building a solution on my own.
 
-## Analyst
+Notice that, instead of focusing on a full single use report,
+I decided to deploy a reusable notebooks that can be used to aid several decisions.
 
-1. investigate columns
-2. 
+# Oppai Challenge
 
-## Science
+## Part 1
 
-### Users
-1. Clusterization?
-2. Infer gender
-3. Overall feeling
+A full exploratory data analisys should contain:
+1. data summany:
+    - min/max
+    - distributions
+    - null
+    - duplication
+    - outliers
+2. correlation analysis
+    - pair plots
+3. timeseries
+    - analysis
 
-### Posts/Comments
+While I did these things to implement the ETLs and dashboards,
+I think it is meaningless to explain it and further explore it
+without more business context.
+Instead, I prefered to provide a full ETL pipeline with quality and unittests,
+and dashboards that can provide insights on a monthly basis.
 
-1. Model for translation
-2. Add text metrics
-    - perplexity
-    - phrase size
-    - keywords most used
-    - toxicity?
-    - sentiment classification
-3. ChatGPT reports
-    - Generate weekly/monthly reports
-4. Clustering:
-    - suggestions?
-    - complaints
+In my opinion, exploratory data analysis requires you to explore
+all the properties of every column and their combinations,
+which is a process of order n^2.
+Therefore, in order to optimize the exploration,
+I believe that exploratory data analysis should be performed
+with a clear (business) objective.
 
-### Votes
-1. Votes with and without weights
+## Part 2
+
+### Porque você modelou dessa forma?
+
+Some of the explanations are in the Data Pipelines section.
+
+I modeled the data in this way mainly due to the dataset size and simplicity.
+There is not need to complicate things that can be simple.
+Here is a breakdown of things that I considered:
+- dataset size:  
+    > small datasets do not need a lot of maintenance, therefore there is not need to complicate it.
+- easy maintenance: 
+
+    > The model that I chose uses the JSON formats directly from the files, therefore it is easier to understance, maintain and track the path of the data.
+
+    > my implementation of the JSON ETL is very sistematic, therefore I could build a library for processing this kind of JSON data and deploy it at a larger scale (notice that the classes in the ETL scripts are very similar).
+
+- medalion tier:
+    > Adding medalion tier add meaning (governance) to the data, since only tiers silver and gold are of interest to extract relevant information.
+
+    > Tables have their individual meaning. This ensures that every table can be reused for different purposes.
+- separate translations from posts:
+    > while it was not necessary to remove the translations from the posts dataset, I believe it will be common to add more translations in the future.
+    Therefore, separating the posts from its translations seems a right business decition.
+
+- unnesting columns:
+    > A few datasets unnest the arrays. This makes it easier to analyze the data later.
+
+- merge:
+    > The merge (upsert) statement (utils.delta.merge) is a very important part of the ETL as it allows to update the data without adding new rows.
+
+- no partitioning:
+    > partitioning is very important as it allows to read only part of the data instead of reading the entire dataset on a query. However, the dataset is very small and partitioning would only make things more complicated (and possibly expensive).
+
+- No dimensional modeling:
+    > I decided to not use dimensional modeling due to the small size of the dataset, however I would implement it if the dataset was larger (terabytes).
+
+- ETL by updated_at_date:
+    > for scalability purposes, it is interesting to process only the data tha have changed. Therefore, I process data in according to its updated date.
+
+    > procesing by updated_at_date is a flexible process as the same script can be used to process the entire dataset and or latest data.
+
+## Essa modelagem serviria pra um treinamento de um modelo de machine learning?
+
+Machine learning pipelines can be very complex and may require
+very specific data transformations and enrichement.
+Therefore, this pipeline will be the basis for machine learning models.
+
+For a better understanding, lets consider the following examples:
+
+1. Say we want to build a ML model that will use the words of the post comments to build predictions.
+In this case, we can use the current pipeline and build a new (silver) table where we translate to english, normalize and remove stop words from the comments (most ML models only work for a single language). This table could be used to feed a ML model.
+1. We want to build a model that classify post comments as relevent/irrelevant suggestions. In this case we could use the table built at step 1 and create a new ML table with new features for the comments. Among these features, we could include number of words, number of complex words, metrics for [text redability](https://en.wikipedia.org/wiki/Readability), and [lexical diversity](https://en.wikipedia.org/wiki/Lexical_density). With the two new tables, we could build a model to select the relevant suggestions and forward them to the staff.
+1. We want to build a simple forecaster to predict the monetary contribution at the end of 2024. By keeping historical data (raw tables), we could build a new (bronze) table with timeseries of monetary contribution. This new table could be used to build a ML model to build a forecaster.
+
+# As estruturas das collections fornecidas podem ser melhoradas para uma melhor análise dos dados? Se sim, sugira melhorias para as estruturas.
+
+Yes, the structures could get a little bit better.
+I believe that this document
+```
+{
+    "_id": {"$oid": "1234"},
+    "body": "this is my body",
+    "created_at": {"$date": "2023-01-01 00:00:00.1234Z}
+}
+```
+would be better if was in the format
+```
+{
+    "_id": "1234",
+    "body": "this is my body",
+    "created_at": "2023-01-01 00:00:00.1234Z"
+}
+```
+
+I worked with MongoDB and know how difficult it is to manipulate data,
+however the later format is a lot clearer and simplifies a lot in the ETL.
+
+Why the second format is better?
+The second format is better since it eliminates the possiblity of new nested data
+```
+{
+    "_id": {"$oid": "1234", "look_a_new_field": "new field},
+    "body": "this is my body",
+    "created_at": {"$date": "2023-01-01 00:00:00.1234Z}
+}
+```
+This would simplify column names and the ETL.
+Notice that the current deployment is capable of dealing with new columns (see [schema evolution](https://www.databricks.com/blog/2020/05/19/schema-evolution-in-merge-operations-and-operational-metrics-in-delta-lake.html) for details).
+The new column in the current deployment would be named "id_look_a_new_field".
+
+Another change regards how data is delivered.
+I would prefer that data is extracted (to S3) in with their extraction date "file_name-yyyy-mm-dd_HH:MM:SS.json".
+This ensures we have a backup history in S3 and allows for easy processing of both historical (by date range) and incremental (by last date) ETLs.
+
+
+
+
+
+
+
+
+
 
 
 
