@@ -21,7 +21,9 @@ Checkout [Alexander Wada's GitHub](https://github.com/alexanderhowada/oppai_chal
 - Full pipeline orchestration (see workflows)
     - Table tiers (raw/bronze/silver/gold)
     - CD (continuous deployment) with Git integration
-    - Spark (Big Data framwork)!
+    - Spark (Big Data framework)!
+    - unittest (conceptual implementation)
+    - data quality (conceptual implementation)
 - Dashboards
     - On notebooks for money saving (see dashboards folder)
     - Can be deployed as custom dashboards (costs a mininum of 1USD per hour!)
@@ -36,7 +38,7 @@ With Databricks data people can focus on results instead of infrastructure.
 
 Databricks is deployed on top of a cloud service provider (AWS/GCP/Azure) and
 it uses their infrastructure to run.
-Therefore, the data is stored withing the data provider and not on Databricks!
+Therefore, the data is stored withing the cloud provider and not on Databricks!
 
 For pricing, we have to pay for the cloud provider resources + Databricks.
 The total pricing for this deployement is approximatelly:
@@ -65,6 +67,7 @@ The same solution without Databricks and with the similar funcionalities should 
     - Athena can get very expensive for unoptimized datasets.
 4. CI/CD
     - Databricks implements a simplified CD
+    - CI/CD pipelines can be very cumbersome and take time to implement.
 5. Workspace
     - Fully colaborative workspace that avoid problems with local development
 
@@ -80,13 +83,15 @@ in order to give the appropriated permission in AWS.
 Since S3 is directly accessed by Databricks, this means that we can have all
 structured and unstructed data at our disposal, therefore the lakehouse.
 
-For structured data, this deployment uses Delta tables as the format for tables.
-Delta tables is a open source format that uses the parquet as the base data format,
+For structured data, this deployment uses Delta tables as the format for the tables.
+The Delta format is open source and uses the parquet as its core,
 but allows logs and ACID transactions.
 Furthermore, data storage and processing are separated, therefore we only pay
 for processing while active using the data.
 See [Databricks explanation](https://docs.databricks.com/en/delta/index.html)
 for more details.
+Delta tables are highly compressed and stored in S3, hence it is much cheaper than
+other solutions such as Athena.
 
 # Data Pipelines
 
@@ -110,12 +115,12 @@ unittest implementations.
 
 ## Medalion implementation explanation
 
-The ideia of keeping an data history (raw tables) is to keep track of changes over the months.
+We keep data history (raw tables) to keep track of changes over the months.
 The changes can include user constribution, number of patrons, etc.
 These are not implemented in the dashboards due to the absence of data.
 
 Later, at the bronze layer, we keep track of the latest state.
-This layer runs on incremental steps: at each step we selectt the latest
+This layer runs on incremental steps: at each step we select the latest
 updated dates (updated_at_date) and merge (upsert) the data by primary key.
 This ensures that we keep the data updated and encapsulates the full and incremental ETLs
 into a single process.
@@ -144,7 +149,7 @@ I suggest looking at the notebooks following the order:
 4. top_countries
 5. post_comments_summary (<b>ChatGPT Integration!!</b>)
 
-These notebook contains afew annotations explaining a few of the results.
+These notebook contains a few annotations explaining a few of the results.
 To observe the results it may be necessary to change the widgets values at the top and run the cells once again.
 The notebooks have a few extra features like a linear regression (that can be upgraded to a forecaster),
 and integration with ChatGPT (paid).
@@ -188,6 +193,9 @@ Therefore, in order to optimize the exploration,
 I believe that exploratory data analysis should be performed
 with a clear (business) objective.
 
+It is also important to notice that good implementations
+of data quality and unittests should cover a great portion of an exploratory data analysis.
+
 ## Part 2
 
 ### Porque você modelou dessa forma?
@@ -201,12 +209,12 @@ Here is a breakdown of things that I considered:
     > small datasets do not need a lot of maintenance, therefore there is not need to complicate it.
 - easy maintenance: 
 
-    > The model that I chose uses the JSON formats directly from the files, therefore it is easier to understance, maintain and track the path of the data.
+    > The model that I chose uses the JSON formats directly from the files, therefore it is easier to understand, maintain and track the path of the data.
 
-    > my implementation of the JSON ETL is very sistematic, therefore I could build a library for processing this kind of JSON data and deploy it at a larger scale (notice that the classes in the ETL scripts are very similar).
+    > my implementation of the JSON ETL is very systematic, therefore I could build a library for processing this kind of JSON data and deploy it at a larger scale (notice that the classes in the ETL scripts are very similar).
 
 - medalion tier:
-    > Adding medalion tier add meaning (governance) to the data, since only tiers silver and gold are of interest to extract relevant information.
+    > Adding medalion tier aggregates meaning (governance) to the tables, since only tiers silver and gold are of interest to extract relevant information.
 
     > Tables have their individual meaning. This ensures that every table can be reused for different purposes.
 - separate translations from posts:
@@ -220,13 +228,13 @@ Here is a breakdown of things that I considered:
     > The merge (upsert) statement (utils.delta.merge) is a very important part of the ETL as it allows to update the data without adding new rows.
 
 - no partitioning:
-    > partitioning is very important as it allows to read only part of the data instead of reading the entire dataset on a query. However, the dataset is very small and partitioning would only make things more complicated (and possibly expensive).
+    > partitioning is very important as it allows to read only part of the data instead of reading the entire dataset when executing a query. However, the dataset is very small and partitioning would only make things more complicated (and possibly more expensive).
 
 - No dimensional modeling:
     > I decided to not use dimensional modeling due to the small size of the dataset, however I would implement it if the dataset was larger (terabytes).
 
 - ETL by updated_at_date:
-    > for scalability purposes, it is interesting to process only the data tha have changed. Therefore, I process data in according to its updated date.
+    > for scalability purposes, it is interesting to process only the data that have changed. Therefore, I process data in according to its updated date.
 
     > procesing by updated_at_date is a flexible process as the same script can be used to process the entire dataset and or latest data.
 
@@ -241,7 +249,7 @@ For a better understanding, lets consider the following examples:
 1. Say we want to build a ML model that will use the words of the post comments to build predictions.
 In this case, we can use the current pipeline and build a new (silver) table where we translate to english, normalize and remove stop words from the comments (most ML models only work for a single language). This table could be used to feed a ML model.
 1. We want to build a model that classify post comments as relevent/irrelevant suggestions. In this case we could use the table built at step 1 and create a new ML table with new features for the comments. Among these features, we could include number of words, number of complex words, metrics for [text redability](https://en.wikipedia.org/wiki/Readability), and [lexical diversity](https://en.wikipedia.org/wiki/Lexical_density). With the two new tables, we could build a model to select the relevant suggestions and forward them to the staff.
-1. We want to build a simple forecaster to predict the monetary contribution at the end of 2024. By keeping historical data (raw tables), we could build a new (bronze) table with timeseries of monetary contribution. This new table could be used to build a ML model to build a forecaster.
+1. We want to build a simple forecaster to predict the monetary contribution at the end of 2024. By keeping historical data (raw tables), we could build a new (bronze) table with timeseries of monetary contribution. This new table could be used to build a ML model to build a forecaster. The results of the forecaster could be used to compare our yearly growth.
 
 # As estruturas das collections fornecidas podem ser melhoradas para uma melhor análise dos dados? Se sim, sugira melhorias para as estruturas.
 
@@ -251,7 +259,7 @@ I believe that this document
 {
     "_id": {"$oid": "1234"},
     "body": "this is my body",
-    "created_at": {"$date": "2023-01-01 00:00:00.1234Z}
+    "created_at": {"$date": "2023-01-01 00:00:00.1234Z"}
 }
 ```
 would be better if was in the format
@@ -264,10 +272,10 @@ would be better if was in the format
 ```
 
 I worked with MongoDB and know how difficult it is to manipulate data,
-however the later format is a lot clearer and simplifies a lot in the ETL.
+however the later format is a lot clearer and simplifies the ETL a lot.
 
 Why the second format is better?
-The second format is better since it eliminates the possiblity of new nested data
+The second format is better since it simplifies column names and eliminates the possiblity of new nested data
 ```
 {
     "_id": {"$oid": "1234", "look_a_new_field": "new field},
@@ -275,12 +283,11 @@ The second format is better since it eliminates the possiblity of new nested dat
     "created_at": {"$date": "2023-01-01 00:00:00.1234Z}
 }
 ```
-This would simplify column names and the ETL.
 Notice that the current deployment is capable of dealing with new columns (see [schema evolution](https://www.databricks.com/blog/2020/05/19/schema-evolution-in-merge-operations-and-operational-metrics-in-delta-lake.html) for details).
 The new column in the current deployment would be named "id_look_a_new_field".
 
 Another change regards how data is delivered.
-I would prefer that data is extracted (to S3) in with their extraction date "file_name-yyyy-mm-dd_HH:MM:SS.json".
+I would prefer that data is extracted (to S3) with their extraction date "file_name-yyyy-mm-dd_HH:MM:SS.json".
 This ensures we have a backup history in S3 and allows for easy processing of both historical (by date range) and incremental (by last date) ETLs.
 
 
