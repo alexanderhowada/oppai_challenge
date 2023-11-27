@@ -73,7 +73,7 @@ def get_comments_from_post():
 # MAGIC 4. Read the summary.
 # MAGIC
 # MAGIC Observations:
-# MAGIC 1. ChatGPT can return different responses to the same statement, hence it may be interestint to run the script many times for the same post_id.
+# MAGIC 1. ChatGPT can return different responses to the same statement, hence it may be interesting to run the script many times for the same post_id.
 # MAGIC 2. This uses the paid version of ChatGPT, therefore, please, be carefull with its use.
 # MAGIC     - The sum of total cost is capped at 5 USD.
 
