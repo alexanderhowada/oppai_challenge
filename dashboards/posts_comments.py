@@ -97,7 +97,7 @@ df.display()
 
 # MAGIC %md
 # MAGIC
-# MAGIC ### Number of comments
+# MAGIC ## Number of comments
 # MAGIC
 # MAGIC Analysis with:
 # MAGIC <code>start_date</code> = 2020-10-21
@@ -119,27 +119,47 @@ df.display()
 # MAGIC - share_country_patron (bottom).
 # MAGIC Share of users per country and patron status.
 # MAGIC
-# MAGIC Conclusions:
-# MAGIC 1. Some countries have very small ammount of comments makes it difficult to take any statistical approach, as statistics need a very large quantities.
-# MAGIC 2. US is the country with the most ammout of comments.
-# MAGIC     - US is also the country with hightest monetary contribution
-# MAGIC 3. The plots show that some countries (like BR and FR) are more talkative, despite their lower overall monetary contribution.
-# MAGIC     - BR is 4th most talkative country, however it represents only 1% of the lisfetime support share.
-# MAGIC     - BR ranks 3rd on the non patron number of comments
-# MAGIC     - FR is ranks 2st in the is patron, however it is 6th on the non patron.
+# MAGIC ## Analysis
+# MAGIC
+# MAGIC # Overview
+# MAGIC
+# MAGIC There are not a lot of comments per country and their distribution per patron status is very mixed.
+# MAGIC Therefore, we may not have enough comments to draw good (statistical) decisions.
+# MAGIC
+# MAGIC # n_per_country
+# MAGIC - US has the highest ammount of comments (US also has the greatest user base).
+# MAGIC - Only the to 5 countries have over 100 comments.
+# MAGIC - The patron status seems to not directly correlate with the number of comments since the highest number of comments per patron status swap across many countries.
+# MAGIC
+# MAGIC # share_country
+# MAGIC
+# MAGIC - The share of the number of comments seems to decay much slowly then share per monetary contributions.
+# MAGIC This is a good sanity check, since comment is free and it is more likely that a user will write a comment
+# MAGIC then to donate.
+# MAGIC - The plot also reinforce that there are contries (like BR) that ranks very high on engagement (comments/votes),
+# MAGIC but they fall back in monetary contribution.
+# MAGIC
+# MAGIC # share_country_patron
+# MAGIC
+# MAGIC - 43% of patrons are from US!
+# MAGIC - TR seems to have a large user base (16.6% of non patrons), but very patrons (1.58%)
+# MAGIC - The discrepancy of the share of users per patron status among countries shows that there is a lot of opportunities to increase income by creating lower price tiers.
+# MAGIC
+# MAGIC # bottom plots
+# MAGIC - They also emphasizes the conclusions above.
 # MAGIC
 # MAGIC Overall, we can conclude that, while monetary contributions do correlate with higher engagement,
 # MAGIC there are differences in culture that influences communication.
 # MAGIC From the optimization standpoint, some countries, like BR, may be high maintenance and low profit due to the contrast between high comments and lower contribution.
 # MAGIC
 # MAGIC Furthermore, it would be interesting to understand how piracy and price localization influences these behaviors: is BR contribution lower due to bad USD pricing?
-# MAGIC Can we engagement and contribution (and possibly reduce piracy) with better localized prices?
+# MAGIC Can we engagement and contribution (and possibly reduce piracy) with better localized (or lower tier) prices?
 
 # COMMAND ----------
 
 df = spark.sql(f"""
 SELECT 
-    country
+    COALESCE(country, 'None') country
     , CAST(COALESCE(patreon_status_is_patron, FALSE) AS STRING) AS is_patron
     , COUNT(post_comments_id_oid) AS n_comments
 FROM {TARGET_POST_COMMENTS_JOIN_SILVER}
@@ -164,13 +184,3 @@ ORDER BY 3 DESC
 # df = LinearTrend(spark).df_all_labels(df, 'date', 'n_comments', 'is_patron', 'linear ')
 df.display()
 df_users.display()
-
-# COMMAND ----------
-
-# MAGIC %md
-# MAGIC
-# MAGIC # Reports
-
-# COMMAND ----------
-
-asdfasdfa
