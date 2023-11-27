@@ -1,5 +1,7 @@
 # Project Overview
 
+(Sorry for the typing mistakes, did not have time to fix and review it)
+
 This repository implements the solution of the Oppai challenge.
 Answers to the questions of the Oppai Challenge pdf are at the end.
 
@@ -290,15 +292,61 @@ Another change regards how data is delivered.
 I would prefer that data is extracted (to S3) with their extraction date "file_name-yyyy-mm-dd_HH:MM:SS.json".
 This ensures we have a backup history in S3 and allows for easy processing of both historical (by date range) and incremental (by last date) ETLs.
 
+## What can improve?
 
+While this is a complete functional deployment, there are many things that could improve.
+Here is a breakdown of things that I would like to implement from the data engineering, science and analyst point of view.
 
+### Data engineering
 
+- Create reusable code.
+    > The classes created for the ETL have a clear pattern, hence I could build a single class and inherit the desired properties to other processes.
+- Add README, typing and docstrings
+    > Documentation is very important and having a README for each individual folder can save time in the future.
 
+    > typing plays a very important role in Python as it make simples to understand the inputs of functions and methods and is very important when creating reusable code.
 
+    > similarly to typing, docstrings is also very important when writing reusable code.
+- Better governance
+    > Governance is very important and writing a document the describes the properties or raw, bronze, silver and gold tables and their columns is very important. For example, I could set that no column in the silver and gold tiers have null values. This would improve the data analysis because it avoids the use of the COALESCE statment.
+- Better data quality
+    > Data quality is important because it tests the data against its statistical propertier. In a way, data quality plays a very similar role of unittests in the world of data.
+- Better unit/integration tests
+    > Unittests ensure that the code I wrote do what I want it to do, and writing it is an investment for the future. It only takes about 3 to 6 months until it becomes extremaly important.
+- CI/CD
+    > While Databricks offers a simplified CI/CD, it would be important to implement a full CI/CD pipeline that runs all tests automatically and ensures the correct deployment configuration.
+- Implement unity catalog
+    > Unity catalog allows ACL for the delta tables. This is very important when working with many colaborators, but it requires bigger machines and therefore an increase in price.
 
+### Data science
 
+There are many things that I would like to implement in machine learning,
+however time is short and I had no time to implement anything but a simple linear regression.
+In addition, I decided that was more important to integrate ChatGPT than to implement a ML model.
 
+These are the models that I would like to implement and learn:
+- Custom NLP models for:
+    - sentiment analysis
+    - summaryze comments
+    - comment classifiers
+    - generators with fixed personality
+- Custom image generators to optimize drawings and increase creative productivity.
+- Simple regressions and forecasters
+- Clusterization of CRM and other data
 
+There are also many things in the Databricks ecosystem that I would need to master.
+Some of these are:
+- Feature store
+- MLlib
+- ML experiments
+- Deployment of ML models
 
+### Data analyst
 
+To be quite honest, I believe that I do not do a good job as a Data Analyst.
+To improve I need to start from the very basics and take lessons on history telling
+and understand more about the business.
+I also could have made a detailed exploraty data analysis, but I decided to do just the necessary.
 
+I believe that I could also have generated a report with all the results.
+This would have made a lot easier to understand the results.
