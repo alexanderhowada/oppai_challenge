@@ -18,7 +18,12 @@ from machine_learning.openai import OpenAIRequests
 # COMMAND ----------
 
 w = Widgets(dbutils)
-w.remove_all()
+# w.remove_all()
+
+# COMMAND ----------
+
+w.create_text('start_date', '2020-01-01')
+w.create_text('end_date', '2024-01-01')
 
 # COMMAND ----------
 
@@ -144,4 +149,8 @@ else:
         print('--------------------')
         print(c)
         print('--------------------')
+
+
+# COMMAND ----------
+
 
